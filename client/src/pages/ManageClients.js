@@ -15,7 +15,7 @@ import Input from '../components/Input';
 import TheArchive from '../components/TheArchive';
 import ClosetSettings from '../components/ClosetSettings';
 import { CircularProgress, Tooltip } from '@mui/material';
-import { ManageClientsContainer } from '../styles/ManageClients';
+import { ManageClientsContainer } from '../components/styles/ManageClients';
 
 const CircleProgress = styled(CircularProgress)`
     & * {
@@ -509,7 +509,7 @@ export default function ManageClients() {
                 >
                     <>
                         <button className="material-icons close-modal" onClick={handleCloseSettings}>close</button>
-                        <h2 className="modal-title">Closet Settings</h2>
+                        {/* <h2 className="modal-title">Closet Settings</h2> */}
                         <div className="modal-content no-scroll">
                             <ClosetSettings 
                                 handleOpenSettings={handleOpenSettings}
