@@ -122,7 +122,8 @@ export const ItemCardContainer = styled.div`
         flex-grow: 1;
     }
 
-    .clothing-card-img {
+    .item-card-link,
+    .item-card-img {
         width: 100%;
         height: 200px;
         display: flex;
@@ -140,6 +141,51 @@ export const ItemCardContainer = styled.div`
     :not(.view-only) img {
         cursor: pointer;
     }
+
+    .iframe-container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+
+        & iframe {
+            max-width: 200px;
+            max-height: 200px;
+            width: auto;
+            height: auto;
+            z-index: 1;
+        }
+
+        & .iframe-overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 2;
+        }
+    }
+
+    :not(.view-only) .iframe-overlay {
+        cursor: pointer;
+    }
+    
+    .invalid-link-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+
+        & .invalid-link-img {
+            cursor: default !important;
+            height: 75px;
+            width: auto;
+        }
+    }
+    
 
     .item-options {
         display: flex;
@@ -181,7 +227,8 @@ export const ItemCardContainer = styled.div`
             margin: 0;
         }
 
-        & .clothing-card-img {
+        & .item-card-link,
+        & .item-card-img {
             height: unset;
         }
     }
@@ -195,20 +242,39 @@ export const ItemCardContainer = styled.div`
         padding: 4px 48px;
         background-color: var(--white);
 
+        &.link {
+            width: 100%;
+        }
+
         .file-name {
             padding: 4px;
         }
 
-        .clothing-card-img {
+        .item-card-link,
+        .item-card-img {
             height: 100%;
             min-height: 0;
-            /* max-height: 80%; */
         }
 
         img {
             max-height: 90%;
             max-width: 90%;
             cursor: default;
+        }
+
+        .item-card-link {
+            width: 100%;
+
+            & iframe {
+                max-width: unset;
+                max-height: unset;
+                width: 100%;
+                height: 100%;
+            }
+
+            & .iframe-overlay {
+                cursor: default;
+            }
         }
 
         .item-options {

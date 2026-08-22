@@ -47,7 +47,7 @@ export default function AddItems({ display }) {
     const { setError } = useError();
     const { user } = useUser();
     const { client, updateClient } = useClient();
-    const { clothesOptions, profileOptions, getCategoryPermissions, tags, updateItems } = useData();
+    const { clothesOptions, profileOptions, getCategoryPermissions, tags, updateItems, setLoading } = useData();
 
     const [allFiles, setAllFiles] = useState([]);
     const [invalidFiles, setInvalidFiles] = useState([]);
@@ -60,8 +60,6 @@ export default function AddItems({ display }) {
     const [hasCredits, setHasCredits] = useState(false);
     const [updateFiles, setUpdateFiles] = useState(false);
 
-    const [addItemsModalOpen, setAddItemsModalOpen] = useState(false);
-    const [massOptionsModalOpen, setMassOptionsModalOpen] = useState(false);
     const [activateMassOptions, setActivateMassOptions] = useState(0);
 
     useEffect(() => {
@@ -191,6 +189,7 @@ export default function AddItems({ display }) {
     }, [allFiles, client, numFilesUploaded]);
 
     // mass options
+    const [massOptionsModalOpen, setMassOptionsModalOpen] = useState(false);
     const [categoriesToShow, setCategoriesToShow] = useState([]);
     const [categoryType, setCategoryType] = useState('clothes');
     const [category, setCategory] = useState('');
@@ -268,6 +267,79 @@ export default function AddItems({ display }) {
             crop: false,
         });
     }
+
+    // add link functionality
+    const [addItemsModalOpen, setAddItemsModalOpen] = useState(false);
+    const [invalidLinkMessage, setInvalidLinkMessage] = useState('');
+    const [linkCategoriesToShow, setLinkCategoriesToShow] = useState([]);
+    const [linkCategoryType, setLinkCategoryType] = useState('profile');
+    const [linkCategory, setLinkCategory] = useState('');
+    const [linkName, setLinkName] = useState('');
+    const [linkUrl, setLinkUrl] = useState('');
+
+    function changeLinkCategoryType(type) {
+        changeLinkCategory('');
+        setLinkCategoryType(type);
+    }
+
+    function changeLinkCategory(category) {
+        setLinkCategory(category);
+    }
+
+    function changeLinkName(name) {
+        setLinkName(name);
+    }
+
+    function changeLinkUrl(url) {
+        setLinkUrl(url);
+    }
+
+    useEffect(() => {
+        if (linkCategoryType === 'profile') {
+            setLinkCategoriesToShow(profileOptions);
+        }
+        else {
+            setLinkCategoriesToShow(clothesOptions);
+        }
+    }, [linkCategoryType, clothesOptions, profileOptions]);
+
+    function closeAddItemsModal() {
+        setAddItemsModalOpen(false);
+        setInvalidLinkMessage('');
+        setLinkCategoryType('profile');
+        setLinkCategory('');
+        setLinkName('');
+        setLinkUrl('');
+    }
+
+    async function addLink(e) {
+        e.preventDefault();
+        if (!linkCategory || !linkName || !linkUrl) {
+            setInvalidLinkMessage('All information must be entered to add a link.');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            await api.post(`/items/link/${client._id}`, {
+                categoryId: linkCategory.value,
+                name: linkName,
+                url: linkUrl,
+            });
+            await updateItems();
+        }
+        catch (err) {
+            setError({
+                message: 'There was an error uploading the link.',
+                status: err?.response?.status,
+            });
+        }
+        finally {
+            setLoading(false);
+            closeAddItemsModal();
+        }
+    }
+    
     return (
         <>
             <AddItemsContainer style={{ display: display ? 'flex' : 'none' }}>
@@ -339,8 +411,8 @@ export default function AddItems({ display }) {
                 <h2 className="modal-title">Mass Options</h2>
                 <div className="modal-content" style={{ overflowY: 'unset' }}>
                     <FileOptionsContainer>
-                        <div className="file-options">
-                            <div className="category-selection">
+                        <div className="options">
+                            <div className="option">
                                 <p className="prompt">What category would you like to add all the items to?</p>
                                 <Input
                                     type="radio"
@@ -354,7 +426,7 @@ export default function AddItems({ display }) {
                                 <SwapDropdown options={categoriesToShow} onChange={changeCategory} value={category} />
                             </div>
                             { (user?.isAdmin || user?.isSuperAdmin) &&
-                                <div className="rmbg-selection">
+                                <div className="option">
                                     <Input
                                         type="checkbox"
                                         id="remove-background"
@@ -370,7 +442,7 @@ export default function AddItems({ display }) {
                                 </div>
                             }
                             { (user?.isAdmin || user?.isSuperAdmin) &&
-                                <div className={`crop-selection ${rmbg ? '' : 'disabled'}`}>
+                                <div className={`option ${rmbg ? '' : 'disabled'}`}>
                                     <Input
                                         type="checkbox"
                                         id="crop-image"
@@ -396,17 +468,66 @@ export default function AddItems({ display }) {
             </Modal>
             <Modal
                 open={addItemsModalOpen}
-                closeFn={() => setAddItemsModalOpen(false)}
+                closeFn={closeAddItemsModal}
             >
                 <h2 className="modal-title">Add Items</h2>
-                <div className="modal-content">
-                    <Dropzone 
-                        setFiles={setAllFiles}
-                        closeAddItemsModal={() => setAddItemsModalOpen(false)}
-                    />
+                <div className="modal-content" style={{ overflowY: 'unset' }}>
+                    { (user?.isSuperAdmin || user?.isAdmin) ?
+                        <FileOptionsContainer>
+                            <div className="secondary-title">Add A Link</div>
+                            { invalidLinkMessage && <div className="error">{invalidLinkMessage}</div>}
+                            <div className="options">
+                                <div className="option">
+                                    <Input
+                                        type="text"
+                                        id="link-name"
+                                        label="Name"
+                                        onChange={e => changeLinkName(e.target.value)}
+                                        value={linkName}
+                                    />
+                                </div>
+                                <div className="option">
+                                    <Input
+                                        type="text"
+                                        id="link-url"
+                                        label="Link"
+                                        onChange={e => changeLinkUrl(e.target.value)}
+                                        value={linkUrl}
+                                    />
+                                </div>
+                                <div className="option">
+                                    <p className="prompt">What category would you like to add this link to?</p>
+                                    <Input
+                                        type="radio"
+                                        value={linkCategoryType}
+                                        radioOptions={[
+                                            { value: 'clothes', label: 'Clothes' },
+                                            { value: 'profile', label: 'Profile' },
+                                        ]}
+                                        onChange={e => changeLinkCategoryType(e.target.value)}
+                                    />
+                                    <SwapDropdown options={linkCategoriesToShow} onChange={changeLinkCategory} value={linkCategory} />
+                                </div>
+                                <div className="option">
+                                    <button className="option-button" onClick={e => addLink(e)}>Add Link</button>
+                                </div>
+                            </div>
+                            <div className="separator"></div>
+                            <div className="secondary-title">Add Files</div>
+                            <Dropzone 
+                                setFiles={setAllFiles}
+                                closeAddItemsModal={closeAddItemsModal}
+                            />
+                        </FileOptionsContainer>
+                        :
+                        <Dropzone 
+                            setFiles={setAllFiles}
+                            closeAddItemsModal={closeAddItemsModal}
+                        />
+                    }
                 </div>
                 <div className="modal-options">
-                    <button onClick={() => setAddItemsModalOpen(false)}>Done</button>
+                    <button onClick={closeAddItemsModal}>Done</button>
                 </div>
             </Modal>
             <Modal

@@ -147,7 +147,7 @@ export default function ShoppingCard({
                             target="_blank"
                             rel="noreferrer"
                         >
-                            shortcut
+                            open_in_new
                         </a>
                     </Tooltip>
                 </div>

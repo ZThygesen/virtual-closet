@@ -226,6 +226,25 @@ export const DataProvider = ({ children }) => {
     }, [tags]);
 
     // === items ---------------------------------------------
+    const getLinkItemUrl = useCallback((url) => {
+        if (!url?.startsWith('https://docs.google.com')) {
+            return '';
+        }
+        else {
+            let newUrl = url?.split('?')[0];
+            const parts = newUrl?.split('/');
+            if (!parts?.includes('pubembed')) {
+                if (parts?.includes('pub')) {
+                    newUrl = newUrl?.replace('/pub', '/pubembed');
+                }
+                else {
+                    newUrl = newUrl + '/pubembed';
+                }
+            }
+            return newUrl + '?start=false&loop=false&delayms=3000&rm=minimal';
+        }
+    }, []);
+
     const updateItems = useCallback(async () => {
         if (client) {
             try {
@@ -237,6 +256,9 @@ export const DataProvider = ({ children }) => {
                     item.tagNamesPrefix = tags.join(' | ');
                     item.categoryName = getCategoryName(item.categoryId);
                     item.categoryType = getCategoryType(item.categoryId);
+                    if (item.type === 'link') {
+                        item.urlToDisplay = getLinkItemUrl(item.url);
+                    }
                     theseItems.push(item);
                 }
                 theseItems.sort((a, b) => {
@@ -261,17 +283,17 @@ export const DataProvider = ({ children }) => {
                 });
             }
         }
-    }, [client, resolveTagIds, getCategoryName, getCategoryType, setError]);
+    }, [client, resolveTagIds, getCategoryName, getCategoryType, getLinkItemUrl, setError]);
 
-        // current category's items
-        useEffect(() => {
-            if (currentCategory._id === -1) {
-                setCurrentItems(items);
-            }
-            else {
-                setCurrentItems(items.filter(item => item.categoryId === currentCategory._id));
-            }
-        }, [items, currentCategory]);
+    // current category's items
+    useEffect(() => {
+        if (currentCategory._id === -1) {
+            setCurrentItems(items);
+        }
+        else {
+            setCurrentItems(items.filter(item => item.categoryId === currentCategory._id));
+        }
+    }, [items, currentCategory]);
 
     // === outfits ---------------------------------------------
     const updateOutfits = useCallback(async () => {

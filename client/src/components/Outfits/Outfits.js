@@ -6,7 +6,6 @@ import api from '../../api';
 import OutfitCard from './OutfitCard';
 import { OutfitsContainer } from './OutfitsStyles';
 import Input from '../Input';
-import cuid from 'cuid'; 
 import Modal from '../Modal';
 import { Tooltip } from '@mui/material';
 
@@ -190,7 +189,7 @@ export default function Outfits({ display, sendOutfitToCanvas, itemToSearch, cle
                                 setCanvasEditModalOpen={setCanvasEditModalOpen}
                                 setDeleteModalOpen={setDeleteModalOpen}
                                 setModalOutfit={setModalOutfit}
-                                key={cuid()}
+                                key={outfit._id}
                             />
                         ))
                     }

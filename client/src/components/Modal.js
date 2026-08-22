@@ -8,7 +8,8 @@ export default function Modal({ open, closeFn, isForm, submitFn, isImage, isLoad
         if (isImage && 
             !isLoading && 
             open && 
-            e.target.tagName !== 'IMG' && 
+            e.target.tagName !== 'IMG' &&
+            !classList.includes('iframe-overlay') &&
             !classList.includes('send-to-canvas') &&
             !classList.includes('prev-card') &&
             !classList.includes('next-card')

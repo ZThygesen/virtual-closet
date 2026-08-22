@@ -61,7 +61,28 @@ const FileOptionsContainer = styled.div`
     flex-direction: column;
     align-items: center;
 
-    & .file-options {
+    & .separator {
+        width: 100%;
+        height: 1px;
+        background-color: var(--black);
+        margin: 20px 0;
+    }
+
+    & .secondary-title {
+        align-self: flex-start;
+        font-weight: 600;
+        font-size: 20px;
+        padding-bottom: 8px;
+    }
+
+    & .error {
+        align-self: flex-start;
+        font-weight: 600;
+        padding-bottom: 12px;
+        color: #ff0000;
+    }
+
+    & .options {
         width: 100%;
         display: flex;
         flex-direction: column;
@@ -72,21 +93,34 @@ const FileOptionsContainer = styled.div`
             font-weight: 600;
         }
 
-        & .category-selection,
-        & .rmbg-selection,
-        & .crop-selection {
+        & .option {
             display: flex;
             flex-direction: column;
             align-items: flex-start;
-        }
 
-        & .crop-selection.disabled {
-            opacity: 0.3;
-            pointer-events: none;
+            &.disabled {
+                opacity: 0.3;
+                pointer-events: none;
+            }
         }
 
         & .prompt {
             text-align: left;
+        }
+
+        & .option-button {
+            background: none;
+            cursor: pointer;
+            transition: 0.1s;
+            padding: 6px 16px;
+            border: 1px solid var(--black);
+            border-radius: 12px;
+
+            &:hover {
+                color: var(--white);
+                border-color: var(--white);
+                background-color: var(--primary);
+            }
         }
     }
 `;

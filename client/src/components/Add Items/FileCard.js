@@ -40,26 +40,6 @@ export default function FileCard({
     const [crop, setCrop] = useState(file.crop);
 
     // === update file info -----------------------------------------
-    // category
-    const changeCategory = useCallback((category) => {
-        setCategory(category);
-        file.category = category;
-    }, [file]);
-
-    const changeCategoryType = useCallback((type) => {
-        setCategoryType(type);
-        changeCategory('');
-    }, [changeCategory]);
-
-    useEffect(() => {
-        if (categoryType === 'profile') {
-            setCategoriesToShow(profileCategories);
-        }
-        else {
-            setCategoriesToShow(clothesCategories);
-        }
-    }, [categoryType, clothesCategories, profileCategories]);
-
     // tags
     function changeTags(checkbox) {
         let updatedTags = [];
@@ -104,7 +84,10 @@ export default function FileCard({
         file.crop = crop;
     }, [file]);
 
-    useEffect(() => {
+    // category
+    const changeCategory = useCallback((category) => {
+        setCategory(category);
+        file.category = category;
         const { rmbgItems } = getCategoryPermissions(category?.value);
         if (rmbgItems) {
             changeRmbg(true);
@@ -114,12 +97,26 @@ export default function FileCard({
             changeRmbg(false);
             changeCrop(false);
         }
-    }, [file, category, getCategoryPermissions, changeRmbg, changeCrop]);
+    }, [file, getCategoryPermissions, changeRmbg, changeCrop]);
+
+    // category type
+    const changeCategoryType = useCallback((type) => {
+        setCategoryType(type);
+        changeCategory('');
+    }, [changeCategory]);
+
+    useEffect(() => {
+        if (categoryType === 'profile') {
+            setCategoriesToShow(profileCategories);
+        }
+        else {
+            setCategoriesToShow(clothesCategories);
+        }
+    }, [categoryType, clothesCategories, profileCategories]);
 
     // apply mass options
     useEffect(() => {
         if (activateMassOptions) {
-            console.log(massOptions)
             changeCategoryType(massOptions?.categoryType === 'profile' ? 'profile' : 'clothes');
             changeCategory(massOptions.category);
             changeRmbg(massOptions.rmbg);

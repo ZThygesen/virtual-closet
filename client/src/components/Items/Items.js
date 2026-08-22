@@ -8,8 +8,8 @@ import { ItemsContainer } from './ItemsStyles';
 import { DropdownContainer, SwapDropdown } from '../styles/Dropdown';
 import Modal from '../Modal';
 import Input from '../Input';
-import cuid from 'cuid';
 import { Pagination } from '@mui/material';
+import invalidImg from '../../images/invalid.png';
 
 export default function Items({ display, addCanvasItem, canvasItems, searchOutfitsByItem, onSidebar }) {
     const { setError } = useError();
@@ -67,13 +67,16 @@ export default function Items({ display, addCanvasItem, canvasItems, searchOutfi
 
     // modal controls
     const [imageModalOpen, setImageModalOpen] = useState(false);
+    const [iframeModalOpen, setIframeModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
+    const [editLinkModalOpen, setEditLinkModalOpen] = useState(false);
     const [tagsModalOpen, setTagsModalOpen] = useState(false);
     const [categoryModalOpen, setCategoryModalOpen] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
     const [modalItem, setModalItem] = useState({});
     const [newItemName, setNewItemName] = useState('');
+    const [newItemUrl, setNewItemUrl] = useState('');
     const [newItemTags, setNewItemTags] = useState([]);
     const [newItemTagObjects, setNewItemTagObjects] = useState([]);
     const [categoriesToShow, setCategoriesToShow] = useState([]);
@@ -85,12 +88,24 @@ export default function Items({ display, addCanvasItem, canvasItems, searchOutfi
         setModalItem({});
     }
 
+    function closeIframeModal() {
+        setIframeModalOpen(false);
+        setModalItem({});
+    }
+
     function closeEditModal() {
         setEditModalOpen(false);
         setModalItem({});
         setNewItemName('');
         setNewItemTags([]);
         setNewItemTagObjects([]);
+    }
+
+    function closeEditLinkModal() {
+        setEditLinkModalOpen(false);
+        setModalItem({});
+        setNewItemName('');
+        setNewItemUrl('');
     }
 
     function closeTagsModal() {
@@ -152,6 +167,37 @@ export default function Items({ display, addCanvasItem, canvasItems, searchOutfi
     }
 
     useEffect(() => {
+        if (editLinkModalOpen) {
+            setNewItemName(modalItem.fileName);
+            setNewItemUrl(modalItem.url);
+        }
+    }, [editLinkModalOpen, modalItem]);
+
+    async function editLinkItem(e) {
+        e.preventDefault();
+        if (newItemName === modalItem.fileName && newItemUrl === modalItem.url) {
+            closeEditLinkModal();
+            return;
+        }
+
+        try {
+            setLoading(true);
+            await api.patch(`/items/link/${client._id}/${modalItem._id}`, { name: newItemName, url: newItemUrl });
+            await updateItems();
+        }
+        catch(err) {
+            setError({
+                message: 'There was an error editing the link item.',
+                status: err?.response?.status,
+            });
+        }
+        finally {
+            setLoading(false);
+            closeEditLinkModal();
+        }
+    }
+
+    useEffect(() => {
         setCategorySelected('');
         if (categoryTypeSelected === 'profile') {
             setCategoriesToShow(profileOptions);
@@ -189,7 +235,12 @@ export default function Items({ display, addCanvasItem, canvasItems, searchOutfi
     async function deleteItem() {
         try {
             setLoading(true);
-            await api.delete(`/items/${client._id}/${modalItem._id}`);
+            if (modalItem.type === 'link') {
+                await api.delete(`/items/link/${client._id}/${modalItem._id}`);
+            }
+            else {
+                await api.delete(`/items/${client._id}/${modalItem._id}`);
+            }
             await updateItems();
         }
         catch (err) {
@@ -217,7 +268,6 @@ export default function Items({ display, addCanvasItem, canvasItems, searchOutfi
             setModalItem(currentItems[currIndex + 1]);
         }
     }
-
     return (
         <>
             <ItemsContainer style={{ display: display ? 'flex' : 'none' }}>
@@ -256,13 +306,15 @@ export default function Items({ display, addCanvasItem, canvasItems, searchOutfi
                                 addCanvasItem={addCanvasItem}
                                 searchOutfitsByItem={searchOutfitsByItem}
                                 setImageModalOpen={setImageModalOpen}
+                                setIframeModalOpen={setIframeModalOpen}
                                 setEditModalOpen={setEditModalOpen}
+                                setEditLinkModalOpen={setEditLinkModalOpen}
                                 setCategoryModalOpen={setCategoryModalOpen}
                                 setDeleteModalOpen={setDeleteModalOpen}
                                 setModalItem={setModalItem}
                                 onSidebar={onSidebar}
                                 onCanvas={canvasItems.some(canvasItem => canvasItem.itemId === item._id)}
-                                key={cuid()}
+                                key={item._id}
                             />
                         ))
                     }
@@ -287,6 +339,21 @@ export default function Items({ display, addCanvasItem, canvasItems, searchOutfi
                 </>
             </Modal>
             <Modal
+                open={iframeModalOpen}
+                closeFn={closeIframeModal}
+                isImage={true}
+            >
+                <>  
+                    <button className="material-icons close-modal" onClick={closeIframeModal}>close</button>
+                    <ItemCard
+                        item={modalItem}
+                        onModal={true}
+                        prevModalItem={prevModalItem}
+                        nextModalItem={nextModalItem}
+                    />
+                </>
+            </Modal>
+            <Modal
                 open={editModalOpen}
                 closeFn={closeEditModal}
                 isForm={true}
@@ -305,7 +372,7 @@ export default function Items({ display, addCanvasItem, canvasItems, searchOutfi
                         <img
                             src={modalItem.smallFileUrl}
                             alt={modalItem.fileName}
-                            className="edit-img"
+                            className="item-modal-img"
                         />
                         <div className="tags-container">
                             <p className="tags-prompt">Tags</p>
@@ -324,6 +391,54 @@ export default function Items({ display, addCanvasItem, canvasItems, searchOutfi
                     </div>
                     <div className="modal-options">
                         <button type="button" onClick={closeEditModal}>Cancel</button>
+                        <button type="submit">Save</button>
+                    </div>
+                </>
+            </Modal>
+            <Modal
+                open={editLinkModalOpen}
+                closeFn={closeEditLinkModal}
+                isForm={true}
+                submitFn={editLinkItem}
+            >
+                <>
+                    <h2 className="modal-title">Edit Item</h2>
+                    <div className="modal-content">
+                        <Input
+                            type="text"
+                            id="item-name"
+                            label="Item Name"
+                            value={newItemName}
+                            onChange={e => setNewItemName(e.target.value)}
+                        />
+                        <Input
+                            type="text"
+                            id="item-url"
+                            label="Item Link"
+                            value={newItemUrl}
+                            onChange={e => setNewItemUrl(e.target.value)}
+                        />
+                        { modalItem.urlToDisplay ?
+                            <div className="iframe-container modal">
+                                <iframe
+                                    src={modalItem.urlToDisplay}
+                                    title={modalItem.fileName}
+                                />
+                                <div className="iframe-overlay"></div>
+                            </div>
+                            :
+                            <div className='invalid-link-container'>
+                                <img
+                                    src={invalidImg}
+                                    alt='Invalid Link'
+                                    className='invalid-link-img'
+                                />
+                                <p>Invalid Link</p>
+                            </div>
+                        }
+                    </div>
+                    <div className="modal-options">
+                        <button type="button" onClick={closeEditLinkModal}>Cancel</button>
                         <button type="submit">Save</button>
                     </div>
                 </>
@@ -413,11 +528,34 @@ export default function Items({ display, addCanvasItem, canvasItems, searchOutfi
                 </DropdownContainer>
                 <div className="modal-content">
                     <p className="medium bold underline">{modalItem.fileName}</p>
-                    <img
-                        src={modalItem.smallFileUrl}
-                        alt={modalItem.fileName}
-                        className="delete-img"
-                    />
+                    { modalItem.type === 'link' ?
+                        <>
+                            { modalItem.urlToDisplay ? 
+                                <div className="iframe-container modal">
+                                    <iframe
+                                        src={modalItem.urlToDisplay}
+                                        title={modalItem.fileName}
+                                    />
+                                    <div className="iframe-overlay"></div>
+                                </div>
+                                :
+                                <div className='invalid-link-container'>
+                                    <img
+                                        src={invalidImg}
+                                        alt='Invalid Link'
+                                        className='invalid-link-img'
+                                    />
+                                    <p>Invalid Link</p>
+                                </div>
+                            }
+                        </>
+                        :
+                        <img
+                            src={modalItem.smallFileUrl}
+                            alt={modalItem.fileName}
+                            className="item-modal-img"
+                        />
+                    }
                 </div>
                 <div className="modal-options">
                     <button onClick={closeCategoryModal}>Cancel</button>
@@ -433,11 +571,34 @@ export default function Items({ display, addCanvasItem, canvasItems, searchOutfi
                     <div className="modal-content">
                         <p className="medium">Are you sure you want to delete this item?</p>
                         <p className="large bold underline">{modalItem.fileName}</p>
-                        <img
-                            src={modalItem.smallFileUrl}
-                            alt={modalItem.fileName}
-                            className="delete-img"
-                        />
+                        { modalItem.type === 'link' ?
+                            <>
+                                { modalItem.urlToDisplay ?
+                                    <div className="iframe-container modal">
+                                        <iframe
+                                            src={modalItem.urlToDisplay}
+                                            title={modalItem.fileName}
+                                        />
+                                        <div className="iframe-overlay"></div>
+                                    </div>
+                                    :
+                                    <div className='invalid-link-container'>
+                                        <img
+                                            src={invalidImg}
+                                            alt='Invalid Link'
+                                            className='invalid-link-img'
+                                        />
+                                        <p>Invalid Link</p>
+                                    </div>
+                                }
+                            </>
+                            :
+                            <img
+                                src={modalItem.smallFileUrl}
+                                alt={modalItem.fileName}
+                                className="item-modal-img"
+                            />
+                        }
                     </div>
                     <div className="modal-options">
                         <button onClick={closeDeleteModal}>Cancel</button>

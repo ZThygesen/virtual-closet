@@ -187,7 +187,37 @@ export const ModalContentContainer = styled.div`
         gap: 20px;
     }
 
-    .add-outfit-img, .delete-img, .edit-img {
+    .iframe-container.modal {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        & iframe {
+            max-width: 200px;
+            max-height: 200px;
+            width: auto;
+            height: auto;
+            z-index: 1;
+        }
+
+        & .iframe-overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 2;
+        }
+    }
+
+    .add-outfit-img, 
+    .delete-img, 
+    .edit-img,
+    .category-edit-img
+    .item-modal-img {
         width: 150px;
         height: auto;
     }
@@ -196,12 +226,26 @@ export const ModalContentContainer = styled.div`
         width: 200px;
     }
 
+    .invalid-link-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+
+        & .invalid-link-img {
+            cursor: default !important;
+            height: 75px;
+            width: auto;
+        }
+    }
+
     .modal-content .category-name {
         color: var(--primary);
         text-decoration: underline;
     }
 
-    & button:not(.material-icons, .settings-tab, .archive-tab, .apply-mass-option) {
+    & button:not(.material-icons, .settings-tab, .archive-tab, .apply-mass-option, .option-button) {
         font-size: 20px;
         font-family: 'Prata';
         background: none;

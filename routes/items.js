@@ -63,6 +63,7 @@ const items = {
             const item = {
                 clientId: clientId,
                 categoryId: categoryId,
+                type: 'file',
                 fileName: fileName,
                 fullFileUrl: fullFileUrl,
                 smallFileUrl: smallFileUrl,
@@ -85,6 +86,33 @@ const items = {
             res.status(201).json({ message: 'Success!'});
 
         } 
+        catch (err) {
+            next(err);
+        }
+    },
+
+    async postLink(req, res, next) {
+        try {
+            const { db } = req.locals;
+            const collection = db.collection('items');
+            const { clientId } = req.params;
+            const { categoryId, name, url } = req.body;
+
+            const item = {
+                clientId: clientId,
+                categoryId: categoryId,
+                type: 'link',
+                fileName: name,
+                url: url,
+            };
+
+            const result = await collection.insertOne(item);
+            if (!result.insertedId) {
+                throw helpers.createError('item was not inserted into database', 500);
+            }
+
+            res.status(201).json({ message: 'Success!'});
+        }
         catch (err) {
             next(err);
         }
@@ -131,6 +159,34 @@ const items = {
             res.status(200).json({ message: 'Success!' });
         } 
         catch (err) {
+            next(err);
+        }
+    },
+
+    async patchLink(req, res, next) {
+        try {
+            const { db } = req.locals;
+            const collection = db.collection('items');
+            const { itemId } = req.params;
+            const { name, url } = req.body;
+
+            const result = await collection.updateOne(
+                { _id: itemId },
+                {
+                    $set: {
+                        fileName: name,
+                        url : url,
+                    }
+                }
+            );
+
+            if (result.modifiedCount === 0) {
+                throw helpers.createError('update of link item failed: item not found with given item id', 404);
+            }
+    
+            res.status(200).json({ message: 'Success!' });
+        }
+        catch(err) {
             next(err);
         }
     },
@@ -197,6 +253,25 @@ const items = {
         catch (err) {
             next(err);
         }
+    },
+
+    async deleteLink(req, res, next) {
+        try {
+            const { db } = req.locals;
+            const collection = db.collection('items');
+            const { itemId } = req.params;
+
+            const result = await collection.deleteOne({ _id: itemId });
+
+            if (result.deletedCount === 0) {
+                throw helpers.createError('deletion of item failed: item not deleted from database', 404);
+            }
+    
+            res.status(200).json({ message: 'Success!' });
+        } 
+        catch (err) {
+            next(err);
+        }
     }
 };
 
@@ -211,6 +286,12 @@ router.post('/:clientId',
     auth.checkRmbg,
     items.post,
 );
+router.post('/link/:clientId',
+    auth.requireAdmin,
+    schemaHelpers.validateParams(schema.postLink.params.schema),
+    schemaHelpers.validateBody(schema.postLink.body.schema),
+    items.postLink,
+);
 router.get('/:clientId',
     auth.checkPermissions,
     schemaHelpers.validateParams(schema.get.params.schema),
@@ -223,6 +304,12 @@ router.patch('/:clientId/:itemId',
     auth.checkAddItems,
     items.patchName,
 );
+router.patch('/link/:clientId/:itemId',
+    auth.requireAdmin,
+    schemaHelpers.validateParams(schema.patchLink.params.schema),
+    schemaHelpers.validateBody(schema.patchLink.body.schema),
+    items.patchLink,
+)
 router.patch('/category/:clientId/:itemId', 
     auth.checkPermissions,
     schemaHelpers.validateParams(schema.patchCategory.params.schema),
@@ -235,6 +322,11 @@ router.delete('/:clientId/:itemId',
     schemaHelpers.validateParams(schema.delete.params.schema),
     auth.checkAddItems,
     items.delete,
+);
+router.delete('/link/:clientId/:itemId', 
+    auth.requireAdmin,
+    schemaHelpers.validateParams(schema.deleteLink.params.schema),
+    items.deleteLink,
 );
 
 export { items, router as itemsRouter };
