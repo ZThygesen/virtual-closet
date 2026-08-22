@@ -233,15 +233,25 @@ export const DataProvider = ({ children }) => {
         else {
             let newUrl = url?.split('?')[0];
             const parts = newUrl?.split('/');
-            if (!parts?.includes('pubembed')) {
-                if (parts?.includes('pub')) {
-                    newUrl = newUrl?.replace('/pub', '/pubembed');
+            // google doc
+            if (parts.includes('document')) {
+                if (!parts?.includes('pub')) {
+                    newUrl = newUrl + '/pub';
                 }
-                else {
-                    newUrl = newUrl + '/pubembed';
-                }
+                return newUrl + '?embedded=true';
             }
-            return newUrl + '?start=false&loop=false&delayms=3000&rm=minimal';
+            // google slide
+            else {
+                if (!parts?.includes('pubembed')) {
+                    if (parts?.includes('pub')) {
+                        newUrl = newUrl?.replace('/pub', '/pubembed');
+                    }
+                    else {
+                        newUrl = newUrl + '/pubembed';
+                    }
+                }
+                return newUrl + '?start=false&loop=false&delayms=3000&rm=minimal';
+            }
         }
     }, []);
 
